@@ -1,0 +1,172 @@
+
+fonction MixGènes (GP,GM: génômes des parents): génôme du produit// génôme: tableau de génotypes, un génotype: allèle paternel + allèle maternel + locus
+début
+	variables:
+		tableaux vides: génôme, lociliés 
+		i: entier 
+		locus : Locus
+		génotypeP, génotypeM: génotype
+		Pdéfaut, Ppaternel, Mdéfaut, MPaternel, recomb : booléens
+		taux: réel
+		
+	i:=0
+	Pdefaut := faux
+	Mdefaut := faux
+	
+	Pour chaque génotypeP de GP
+		début
+			génôme[i].locus := génotypeP.locus
+				si (non génotypeP.locus est lié)				
+				alors
+					génôme[i].allèlePaternel := choix alétoire entre génotypeP.allèlePaternel et génotypeP.allèleMaternel
+					génotypeM := chercher génoypte dans GM  où locus = génotypeP.locus 
+						si (génotypeM)
+						alors génôme[i].allèleMaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
+						sinon génôme[i].allèleMaternel := génotypeP.locus.allèleParDéfaut
+				fin sinon
+				i++			
+		fin pour
+		
+	Pour chaque génotypeM de GM
+		début
+			locus := Chercher génotypeM.locus dans GP //la mère peut avoir des gènes non renseignés chez le père
+			si (non locus)
+				alors
+					génôme[i].locus := génotypeM.locus
+					génôme[i].allèlePaternel := génotypeM.locus.allèleParDéfaut
+					génôme[i].allèleMaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
+				fin alors
+				fin si
+				i++ //bien garder la même variable d'incrémentation, c'est la suite du même génôme!
+				
+		fin pour
+	
+	lociliés := chercher loci dans table loci où locus est lié et locus.précédent n'existe pas //récupérer les premiers de chaine de loci liés
+	
+	Pour chaque locus de lociliés
+		début
+			génôme[i].locus := locus
+			
+			génotypeP := chercher génotype dans GP où génotype.locus = locus
+			si (génotypeP) 
+				alors génôme[i].allèlePaternel := choix alétoire entre génotypeP.allèlePaternel et génotypeP.allèleMaternel
+					si (génôme[i].allèlePaternel = génotypeP.allèlePaternel)
+						alors Ppaternel := vrai //savoir de quel chromosome on a pris l'allèle pour le père
+						sinon Ppaternel := faux
+					fin si
+				sinon 
+					génôme[i].allèlePaternel := locus.allèleParDéfaut
+					Pdefaut := vrai
+				fin si
+					
+			génotypeM := chercher génotype dans GM où génotype.locus = locus
+			si (génotypeM) 
+				alors génôme[i].allèlePaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
+					si (génôme[i].allèlePaternel = génotypeM.allèlePaternel)
+						alors Mpaternel := vrai //savoir de quel chromosome on a pris l'allèle pour la mère
+						sinon Mpaternel := faux
+					fin si
+				sinon 
+					génôme[i].allèlePaternel := locus.allèleParDéfaut
+					Mdefaut := vrai
+				fin si
+			
+			faire tant que (locus.suivant) 
+					taux:= locus.taux_recombinaisons
+					recomb :=  (aléa%(taux) <= taux)   //ex: taux de 6%, recombianaison si on pioche de 1 à 6 sur 100
+					locus := locus.suivant
+					i++ //ne pas écraser le premier locus, zou on passe au suivan
+					génôme[i].locus := locus
+					//////////////côté papa
+					génotypeP := chercher génotype dans GP où génotype.locus = locus
+						si (génotypeP) 
+							alors
+							cas Ppaternel //si sur précédent locus on avait l'allèle d'origine paternelle
+								si (recomb) 
+									alors 
+										génôme[i].allèlePaternel := génotypeP.allèleMaternel //recombinaison asssocier un allèle paternel avec un maternel
+										Ppaternel := faux //indication pour le locus suivant
+									fin alors
+									sinon
+										génôme[i].allèlePaternel := génotypeP.allèlePaternel //pas recombinaison asssocier un allèle paternel avec un autre paternel aussi
+										Ppaternel := vrai //indication pour le locus suivant
+									fin sinon
+								fin si //recombinaison
+							fin cas
+							cas Pdefaut //on avait l'allèle par défaut, donc le père était homozygote allèle défaut 
+								génôme[i].allèlePaternel := choix alétoire entre génotypeP.allèlePaternel et génotypeP.allèleMaternel //pas d'importance, recombinaison invisible
+								si (génôme[i].allèlePaternel = génotypeP.allèlePaternel)
+									alors Ppaternel := vrai //indication pour le locus suivant
+									sinon Ppaternel := faux
+								fin si
+							fin cas
+							cas autre //on avait l'allèle maternel du père
+									si (recomb)
+										alors
+											génôme[i].allèlePaternel := génotypeP.allèlePaternel //recombinaison 
+											Ppaternel := vrai
+										fin alors
+										sinon
+											génôme[i].allèlePaternel := génotypeP.allèleMaternel // pas recombinaison 
+											Ppaternel := faux
+										fin sinon
+									fin si //recombinaison
+							fin cas
+						fin alors //on avait un génotype paternel pour ce locus
+						sinon
+							génôme[i].allèlePaternel := locus.allèleParDéfaut
+							Pdefaut := vrai	
+						fin sinon
+						fin si
+					//////////////côté maman
+					génotypeM := chercher génotype dans GM où génotype.locus = locus
+						si (génotypeM) 
+							alors
+							cas Mpaternel //si sur précédent locus on avait l'allèle d'origine paternelle
+								si (recomb) 
+									alors 
+										génôme[i].allèleMaternel := génotypeM.allèleMaternel //recombinaison asssocier un allèle paternel avec un maternel
+										Mpaternel := faux //indication pour le locus suivant
+									fin alors
+									sinon
+										génôme[i].allèleMaternel := génotypeM.allèlePaternel //pas recombinaison asssocier un allèle paternel avec un autre paternel aussi
+										Mpaternel := vrai //indication pour le locus suivant
+									fin sinon
+								fin si //recombinaison
+							fin cas
+							cas Mdefaut //on avait l'allèle par défaut, donc la mère était homozygote allèle défaut 
+								génôme[i].allèleMaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel //pas d'importance, recombinaison invisible
+								si (génôme[i].allèleMaternel = génotypeM.allèlePaternel)
+									alors Mpaternel := vrai //indication pour le locus suivant
+									sinon Mpaternel := faux
+								fin si
+							fin cas
+							cas autre //on avait l'allèle maternel du père
+									si (recomb)
+										alors
+											génôme[i].allèleMaternel := génotypeM.allèlePaternel //recombinaison 
+											Mpaternel := vrai
+										fin alors
+										sinon
+											génôme[i].allèlMPaternel := génotypeM.allèleMaternel // pas recombinaison 
+											Mpaternel := faux
+										fin sinon
+									fin si //recombinaison
+							fin cas
+						fin alors //on avait un génotype maternel pour ce locus
+						sinon
+							génôme[i].allèleMaternel := locus.allèleParDéfaut
+							Mdefaut := vrai	
+						fin sinon
+						fin si
+						
+						
+			fin faire tant que
+			
+		fin pour
+		
+fin fonction
+
+
+
+
