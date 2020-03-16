@@ -16,30 +16,33 @@ début
 	Pour chaque génotypeP de GP
 		début
 			locus := génotypeP.locus
-				si (non (locus est lié))		
+				si (locus non lié)		
 				alors
-					génôme[i].locus := génotypeP.locus
+					génôme[i].locus := locus
 					génôme[i].allèlePaternel := choix alétoire entre génotypeP.allèlePaternel et génotypeP.allèleMaternel
 					génotypeM := chercher génoypte dans GM  où locus = génotypeP.locus 
 						si (génotypeM)
 						alors génôme[i].allèleMaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
 						sinon génôme[i].allèleMaternel := génotypeP.locus.allèleParDéfaut
+						fin si
+				i++ /n'incrémenter que les non liés, sinon y ara des trous!
 				fin alors
-				fin si //si lié on ne fait rien, on traitera après
-				i++			
+				fin si //si lié on ne fait rien, on traitera après		
 		fin pour
 		
 	Pour chaque génotypeM de GM
 		début
-			locus := Chercher génotypeM.locus dans GP //la mère peut avoir des gènes non renseignés chez le père
-			si (non locus)
-				alors
-					génôme[i].locus := génotypeM.locus
-					génôme[i].allèlePaternel := génotypeM.locus.allèleParDéfaut
-					génôme[i].allèleMaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
-				fin alors
-				fin si
-				i++ //bien garder la même variable d'incrémentation, c'est la suite du même génôme!
+			si (génotypeM.locus non lié)
+				locus := Chercher génotypeM.locus dans GP //la mère peut avoir des gènes non renseignés chez le père
+				si (non locus)
+					alors
+						génôme[i].locus := génotypeM.locus
+						génôme[i].allèlePaternel := génotypeM.locus.allèleParDéfaut
+						génôme[i].allèleMaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
+						i++ //bien garder la même variable d'incrémentation, c'est la suite du même génôme, et n'incrémenter que si on a ajouté!
+					fin alors
+					fin si
+			fin si
 				
 		fin pour
 	
@@ -63,8 +66,8 @@ début
 					
 			génotypeM := chercher génotype dans GM où génotype.locus = locus
 			si (génotypeM) 
-				alors génôme[i].allèlePaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
-					si (génôme[i].allèlePaternel = génotypeM.allèlePaternel)
+				alors génôme[i].allèleMaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
+					si (génôme[i].allèleMaternel = génotypeM.allèlePaternel)
 						alors Mpaternel := vrai //savoir de quel chromosome on a pris l'allèle pour la mère
 						sinon Mpaternel := faux
 					fin si
@@ -75,7 +78,7 @@ début
 			
 			faire tant que (locus.suivant) 
 					taux:= locus.taux_recombinaisons
-					recomb :=  (aléa%(taux) <= taux)   //ex: taux de 6%, recombianaison si on pioche de 1 à 6 sur 100
+					recomb :=  (aléa%(taux) < taux)   //ex: taux de 6%, recombinaison si on pioche de 0 à 5 sur 100
 					locus := locus.suivant
 					i++ //ne pas écraser le premier locus, zou on passe au suivan
 					génôme[i].locus := locus
