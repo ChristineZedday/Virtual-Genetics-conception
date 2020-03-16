@@ -15,15 +15,17 @@ début
 	
 	Pour chaque génotypeP de GP
 		début
-			génôme[i].locus := génotypeP.locus
-				si (non génotypeP.locus est lié)				
+			locus := génotypeP.locus
+				si (non (locus est lié))		
 				alors
+					génôme[i].locus := génotypeP.locus
 					génôme[i].allèlePaternel := choix alétoire entre génotypeP.allèlePaternel et génotypeP.allèleMaternel
 					génotypeM := chercher génoypte dans GM  où locus = génotypeP.locus 
 						si (génotypeM)
 						alors génôme[i].allèleMaternel := choix alétoire entre génotypeM.allèlePaternel et génotypeM.allèleMaternel
 						sinon génôme[i].allèleMaternel := génotypeP.locus.allèleParDéfaut
-				fin sinon
+				fin alors
+				fin si //si lié on ne fait rien, on traitera après
 				i++			
 		fin pour
 		
